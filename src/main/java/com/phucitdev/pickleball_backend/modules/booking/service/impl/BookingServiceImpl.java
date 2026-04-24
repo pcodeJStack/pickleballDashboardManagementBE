@@ -5,18 +5,26 @@ import com.phucitdev.pickleball_backend.commo.exception.notfound.NotFoundExcepti
 import com.phucitdev.pickleball_backend.modules.auth.entity.Account;
 import com.phucitdev.pickleball_backend.modules.auth.entity.CustomerProfile;
 import com.phucitdev.pickleball_backend.modules.auth.security.SecurityUtils;
+import com.phucitdev.pickleball_backend.modules.booking.dto.BookingStatus;
 import com.phucitdev.pickleball_backend.modules.booking.dto.CreateBookingRequest;
 import com.phucitdev.pickleball_backend.modules.booking.dto.CreateBookingResponse;
 import com.phucitdev.pickleball_backend.modules.booking.dto.TimeSlotResponse;
+import com.phucitdev.pickleball_backend.modules.booking.entity.Booking;
+import com.phucitdev.pickleball_backend.modules.booking.repository.BookingRepository;
 import com.phucitdev.pickleball_backend.modules.booking.service.BookingService;
 import com.phucitdev.pickleball_backend.modules.court.entity.Court;
+import com.phucitdev.pickleball_backend.modules.court.entity.CourtPricing;
 import com.phucitdev.pickleball_backend.modules.court.entity.TimeSlot;
+import com.phucitdev.pickleball_backend.modules.court.repository.CourtPricingRepository;
 import com.phucitdev.pickleball_backend.modules.court.repository.CourtRepository;
 import com.phucitdev.pickleball_backend.modules.court.repository.TimeSlotRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -24,37 +32,64 @@ import java.util.UUID;
 public class BookingServiceImpl implements BookingService {
     private final CourtRepository courtRepository;
     private final TimeSlotRepository timeSlotRepository;
-    public  BookingServiceImpl(CourtRepository courtRepository,  TimeSlotRepository timeSlotRepository) {
+    private final BookingRepository bookingRepository;
+    private final CourtPricingRepository courtPricingRepository;
+    public  BookingServiceImpl(CourtRepository courtRepository,  TimeSlotRepository timeSlotRepository, BookingRepository bookingRepository, CourtPricingRepository courtPricingRepository) {
         this.courtRepository = courtRepository;
         this.timeSlotRepository = timeSlotRepository;
+        this.bookingRepository = bookingRepository;
+        this.courtPricingRepository = courtPricingRepository;
     }
-
-
     @Override
     public Page<TimeSlotResponse> getAvailableSlots(UUID courtId, LocalDate date, Pageable pageable) {
         if (date == null || date.isBefore(LocalDate.now())) {
             throw new BadRequestException("Ngày không hợp lệ!");
         }
-        Court court = courtRepository.findById(courtId)
+        courtRepository.findById(courtId)
                 .orElseThrow(() -> new NotFoundException("Sân không tồn tại!"));
-        Page<TimeSlot> page = timeSlotRepository.findAvailableSlots(courtId, date, pageable);
+        DayOfWeek dayOfWeek = date.getDayOfWeek();
+        Page<TimeSlot> page = timeSlotRepository.findAvailableSlots(courtId, date, dayOfWeek, pageable);
+        return page.map(ts -> new TimeSlotResponse(
+                ts.getId(),
+                ts.getStartTime(),
+                ts.getEndTime()
+        ));
     }
-
     @Override
     @Transactional
     public CreateBookingResponse createBooking(CreateBookingRequest createBookingRequest) {
-        // 1. Validate ngày
         if (createBookingRequest.bookingDate().isBefore(LocalDate.now())) {
             throw new BadRequestException("Không thể đặt ngày trong quá khứ!");
         }
         Account acc = SecurityUtils.getCurrentAccount();
         CustomerProfile cp = acc.getCustomerProfile();
-
-        // check court có tồn tại không
         Court court = courtRepository.findById(createBookingRequest.courtId())
                 .orElseThrow(() -> new NotFoundException("Sân không tồn tại!"));
+
         TimeSlot slot = timeSlotRepository.findById(createBookingRequest.timeSlotId())
                 .orElseThrow(() -> new NotFoundException("Khung giờ không tồn tại!"));
+        boolean isBooked = bookingRepository
+                .existsByCourtIdAndTimeSlotIdAndBookingDate(
+                        court.getId(),
+                        slot.getId(),
+                        createBookingRequest.bookingDate()
+                );
 
+        if (isBooked) {
+            throw new BadRequestException("Khung giờ đã được đặt! Hãy chọn khung giờ khác");
+        }
+        Booking booking = new Booking();
+        booking.setCourt(court);
+        booking.setTimeSlot(slot);
+        booking.setBookingDate(createBookingRequest.bookingDate());
+        booking.setCustomerProfile(cp);
+        booking.setStatus(BookingStatus.PENDING);
+        CourtPricing pricing = courtPricingRepository
+                .findByCourtIdAndTimeSlotId(court.getId(), slot.getId())
+                .orElseThrow(() -> new NotFoundException("Chưa cấu hình giá cho khung giờ này!"));
+        BigDecimal price = pricing.getPrice();
+        booking.setPrice(price);
+        bookingRepository.save(booking);
+        return new CreateBookingResponse("Tạo booking thành công!");
     }
 }

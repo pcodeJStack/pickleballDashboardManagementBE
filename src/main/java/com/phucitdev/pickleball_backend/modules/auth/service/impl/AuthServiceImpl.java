@@ -5,6 +5,7 @@ import com.phucitdev.pickleball_backend.commo.exception.auth.InvalidCredentialsE
 import com.phucitdev.pickleball_backend.commo.exception.auth.PhoneAlreadyExistsException;
 import com.phucitdev.pickleball_backend.modules.auth.dto.*;
 import com.phucitdev.pickleball_backend.modules.auth.entity.Account;
+import com.phucitdev.pickleball_backend.modules.auth.entity.CustomerProfile;
 import com.phucitdev.pickleball_backend.modules.auth.entity.Role;
 import com.phucitdev.pickleball_backend.modules.auth.repository.AccountRepository;
 import com.phucitdev.pickleball_backend.modules.auth.security.CustomUserDetails;
@@ -96,6 +97,29 @@ public class AuthServiceImpl implements AuthService {
         } catch (BadCredentialsException e) {
             throw new InvalidCredentialsException();
         }
+    }
+
+    @Override
+    public CustomerRegisterResponse customerRegister(CustomerRegisterRequest request) {
+        if (accountRepository.existsByEmail(request.getEmail())) {
+            throw new EmailAlreadyExistsException();
+        }
+        if (accountRepository.existsByPhone(request.getPhone())) {
+            throw new PhoneAlreadyExistsException();
+        }
+        Account account = new Account();
+        account.setEmail(request.getEmail());
+        account.setPassword(passwordEncoder.encode(request.getPassword()));
+        account.setFullName(request.getFullName());
+        account.setPhone(request.getPhone());
+        account.setRole(Role.CUSTOMER);
+        account.setIsActive(true);
+        CustomerProfile cp = new CustomerProfile();
+        cp.setAccount(account);
+        cp.setAvatar(null);
+        account.setCustomerProfile(cp);
+        accountRepository.save(account);
+        return  new CustomerRegisterResponse("Tài khoảng đăng ký thành công");
     }
 
 }

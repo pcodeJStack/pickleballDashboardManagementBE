@@ -1,11 +1,9 @@
 package com.phucitdev.pickleball_backend.modules.auth.controller;
 import com.phucitdev.pickleball_backend.commo.validation.sequence.LoginValidationOrder;
 import com.phucitdev.pickleball_backend.commo.validation.sequence.RegisterValidationOrder;
-import com.phucitdev.pickleball_backend.modules.auth.dto.LoginRequest;
-import com.phucitdev.pickleball_backend.modules.auth.dto.LoginResponse;
-import com.phucitdev.pickleball_backend.modules.auth.dto.RegisterRequest;
-import com.phucitdev.pickleball_backend.modules.auth.dto.RegisterResponse;
+import com.phucitdev.pickleball_backend.modules.auth.dto.*;
 import com.phucitdev.pickleball_backend.modules.auth.service.AuthService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -27,5 +25,10 @@ public class AuthenticationAPI {
     public ResponseEntity<LoginResponse>  login(@Validated(LoginValidationOrder.class) @RequestBody LoginRequest loginRequest) {
          LoginResponse loginResponse = authService.login(loginRequest);
          return ResponseEntity.ok(loginResponse);
+    }
+    @PostMapping("/api/auth/customer/register")
+    public ResponseEntity<CustomerRegisterResponse> registerCustomer(@Validated(RegisterValidationOrder.class) @RequestBody  CustomerRegisterRequest customerRegisterRequest) {
+        CustomerRegisterResponse customerRegisterResponse = authService.customerRegister(customerRegisterRequest);
+        return ResponseEntity.ok(customerRegisterResponse);
     }
 }

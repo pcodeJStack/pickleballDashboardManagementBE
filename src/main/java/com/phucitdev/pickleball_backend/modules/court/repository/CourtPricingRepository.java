@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.Optional;
 import java.util.UUID;
 public interface CourtPricingRepository extends JpaRepository<CourtPricing, UUID> {
     boolean existsByCourtIdAndTimeSlotIdAndDayOfWeek(
@@ -23,8 +24,8 @@ SELECT new com.phucitdev.pickleball_backend.modules.court.dto.GetAllCourtPricing
     c.id,
     z.name,
     z.id,
-    b.name,
     cp.dayOfWeek,
+    b.name,
     ts.startTime,
     ts.endTime,
     cp.price
@@ -50,4 +51,6 @@ AND (:endTime IS NULL OR ts.endTime <= :endTime)
             @Param("endTime") LocalTime endTime,
             Pageable pageable
     );
+    Optional<CourtPricing> findByCourtIdAndTimeSlotId(UUID courtId, UUID timeSlotId);
+    boolean existsByCourtId(UUID courtId);
 }

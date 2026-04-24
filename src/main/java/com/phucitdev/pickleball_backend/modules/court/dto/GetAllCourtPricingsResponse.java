@@ -19,8 +19,8 @@ public record GetAllCourtPricingsResponse(
             UUID courtId,
             String zoneName,
             UUID zoneId,
-            String branchName,
             DayOfWeek dayOfWeek,
+            String branchName,
             LocalTime startTime,
             LocalTime endTime,
             BigDecimal price

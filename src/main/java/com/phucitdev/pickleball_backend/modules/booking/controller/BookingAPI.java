@@ -31,6 +31,7 @@ public class BookingAPI {
     public ResponseEntity<CreateBookingResponse> bookingCourt(@Valid @RequestBody CreateBookingRequest bookingRequest){
         return ResponseEntity.ok(bookingService.createBooking(bookingRequest));
     }
+
     @GetMapping("/api/available-slots")
     public ResponseEntity<Page<TimeSlotResponse>> getAvailableSlots(
             @RequestParam UUID courtId,

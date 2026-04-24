@@ -55,13 +55,13 @@ public class CourtPricingServiceImpl implements CourtPricingService {
                 );
         if (exists) {
             throw new DuplicateResourceException(
-                    "Đã tồn tại giá cho sân này trong khung giờ và ngày đã chọn. Vui lòng chọn khung giờ/ngày khác!"
+                    "Sân này đã bị trùng timeSLot"
             );
         }
         CourtPricing pricing = new CourtPricing();
         pricing.setCourt(court);
-        pricing.setTimeSlot(timeSlot);
         pricing.setDayOfWeek(createCourtPricingRequest.getDayOfWeek());
+        pricing.setTimeSlot(timeSlot);
         pricing.setPrice(createCourtPricingRequest.getPrice());
         courtPricingRepository.save(pricing);
         return new CreateCourtPricingResponse("Tạo thành công!");
