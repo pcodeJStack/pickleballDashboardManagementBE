@@ -18,6 +18,9 @@ import com.phucitdev.pickleball_backend.modules.court.entity.TimeSlot;
 import com.phucitdev.pickleball_backend.modules.court.repository.CourtPricingRepository;
 import com.phucitdev.pickleball_backend.modules.court.repository.CourtRepository;
 import com.phucitdev.pickleball_backend.modules.court.repository.TimeSlotRepository;
+import com.phucitdev.pickleball_backend.modules.payment.dto.PaymentResponse;
+import com.phucitdev.pickleball_backend.modules.payment.service.PaymentService;
+import com.phucitdev.pickleball_backend.modules.payment.service.PayosService;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,11 +37,13 @@ public class BookingServiceImpl implements BookingService {
     private final TimeSlotRepository timeSlotRepository;
     private final BookingRepository bookingRepository;
     private final CourtPricingRepository courtPricingRepository;
-    public  BookingServiceImpl(CourtRepository courtRepository,  TimeSlotRepository timeSlotRepository, BookingRepository bookingRepository, CourtPricingRepository courtPricingRepository) {
+    private final PaymentService paymentService;
+    public  BookingServiceImpl(CourtRepository courtRepository, TimeSlotRepository timeSlotRepository, BookingRepository bookingRepository, CourtPricingRepository courtPricingRepository, PaymentService  paymentService) {
         this.courtRepository = courtRepository;
         this.timeSlotRepository = timeSlotRepository;
         this.bookingRepository = bookingRepository;
         this.courtPricingRepository = courtPricingRepository;
+        this.paymentService = paymentService;
     }
     @Override
     public Page<TimeSlotResponse> getAvailableSlots(UUID courtId, LocalDate date, Pageable pageable) {
@@ -65,7 +70,6 @@ public class BookingServiceImpl implements BookingService {
         CustomerProfile cp = acc.getCustomerProfile();
         Court court = courtRepository.findById(createBookingRequest.courtId())
                 .orElseThrow(() -> new NotFoundException("Sân không tồn tại!"));
-
         TimeSlot slot = timeSlotRepository.findById(createBookingRequest.timeSlotId())
                 .orElseThrow(() -> new NotFoundException("Khung giờ không tồn tại!"));
         boolean isBooked = bookingRepository
@@ -90,6 +94,11 @@ public class BookingServiceImpl implements BookingService {
         BigDecimal price = pricing.getPrice();
         booking.setPrice(price);
         bookingRepository.save(booking);
-        return new CreateBookingResponse("Tạo booking thành công!");
+        PaymentResponse payment = paymentService.createPayment(booking.getId());
+        return new CreateBookingResponse(
+                booking.getId(),
+                payment.getCheckoutUrl(),
+                payment.getQrCode(),
+                payment.getOrderCode());
     }
 }

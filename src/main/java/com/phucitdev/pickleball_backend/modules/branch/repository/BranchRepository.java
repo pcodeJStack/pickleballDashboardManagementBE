@@ -26,14 +26,13 @@ SELECT new com.phucitdev.pickleball_backend.modules.branch.dto.BranchResponse(
     b.updatedAt
 )
 FROM Branch b
-WHERE b.owner.id = :ownerId
-AND b.isDeleted = false
+WHERE b.isDeleted = false
 AND (:name IS NULL OR b.name LIKE CONCAT(:name, '%'))
 AND (:address IS NULL OR b.address LIKE CONCAT(:address, '%'))
 AND (:phone IS NULL OR b.phone LIKE CONCAT(:phone, '%'))
 """)
     Page<BranchResponse> searchBranches(
-            UUID ownerId,
+
             String name,
             String address,
             String phone,

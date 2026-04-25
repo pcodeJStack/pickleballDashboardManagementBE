@@ -1,7 +1,6 @@
 package com.phucitdev.pickleball_backend.modules.payment.entity;
 import com.phucitdev.pickleball_backend.commo.base.BaseEntity;
 import com.phucitdev.pickleball_backend.modules.booking.entity.Booking;
-import com.phucitdev.pickleball_backend.modules.payment.dto.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -26,12 +25,16 @@ public class Payment extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private PaymentStatus status;
 
-    private String method; // PAYOS
-
+    @Enumerated(EnumType.STRING)
+    private PaymentMethod method;
+    private String description;
     private String paymentUrl;
-
+    private LocalDateTime expiredAt;
+    private String cancelReason;
     private String currentTransactionCode; // transaction hiện tại
 
+    @Column(unique = true, nullable = false)
+    Long payosOrderCode;
     private LocalDateTime paidAt;
 
     @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL)

@@ -43,7 +43,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 || path.startsWith("/v3/api-docs")
                 || path.startsWith("/swagger-resources")
                 || path.startsWith("/webjars")
-                || path.startsWith("/ws");
+                || path.startsWith("/ws")
+                ||  path.startsWith("/api/payos/webhook");
     }
 
     @Override

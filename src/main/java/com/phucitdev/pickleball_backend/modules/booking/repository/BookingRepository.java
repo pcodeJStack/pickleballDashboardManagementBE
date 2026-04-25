@@ -12,4 +12,5 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
             UUID timeSlotId,
             LocalDate bookingDate
     );
+
 }

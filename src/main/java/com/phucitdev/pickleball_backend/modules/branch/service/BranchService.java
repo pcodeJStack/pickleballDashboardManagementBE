@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public interface BranchService{
     CreateNewBranchResponse createNewBranch(CreateNewBranchRequest createNewBranchRequest);
-    GetAllBranchesResponse getMyBranches(Pageable pageable, String name, String address, String phone);
+    GetAllBranchesResponse getBranches(Pageable pageable, String name, String address, String phone);
     DeleteBranchResponse deleteBranch(UUID branchId);
     UpdateBranchResponse updateBranch(UUID branchId, UpdateBranchRequest updateBranchRequest);
 }

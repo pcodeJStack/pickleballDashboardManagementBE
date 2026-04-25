@@ -27,7 +27,7 @@ public class BranchController {
           return ResponseEntity.ok().body(createNewBranchResponse);
     }
     @GetMapping("/api/branches")
-    public ResponseEntity<GetAllBranchesResponse> getMyBranches(
+    public ResponseEntity<GetAllBranchesResponse> getBranches(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String name,
@@ -35,7 +35,7 @@ public class BranchController {
             @RequestParam(required = false) String phone
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return ResponseEntity.ok(branchService.getMyBranches(pageable, name, address, phone));
+        return ResponseEntity.ok(branchService.getBranches(pageable, name, address, phone));
     }
     @DeleteMapping("/api/branch/{id}")
     public ResponseEntity<DeleteBranchResponse> deleteBranch(@PathVariable UUID id){

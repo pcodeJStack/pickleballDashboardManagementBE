@@ -43,12 +43,12 @@ public class BranchServiceImpl implements BranchService {
         return new CreateNewBranchResponse("Create new branch successfully");
     }
     @Override
-    public GetAllBranchesResponse getMyBranches(Pageable pageable, String name, String address, String phone) {
-        Account acc = SecurityUtils.getCurrentAccount();
+    public GetAllBranchesResponse getBranches(Pageable pageable, String name, String address, String phone) {
+
         name = normalize(name);
         address = normalize(address);
         phone = normalize(phone);
-        Page<BranchResponse> pageData = branchRepository.searchBranches(acc.getId(), name, address, phone, pageable);
+        Page<BranchResponse> pageData = branchRepository.searchBranches(name, address, phone, pageable);
         return new GetAllBranchesResponse(
                 pageData.getContent(),
                 pageData.getNumber(),
