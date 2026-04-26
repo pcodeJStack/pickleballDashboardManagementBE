@@ -54,7 +54,7 @@ public class AuthServiceImpl implements AuthService {
         account.setPassword(passwordEncoder.encode(request.getPassword()));
         account.setFullName(request.getFullName());
         account.setPhone(request.getPhone());
-        account.setRole(Role.CUSTOMER);
+        account.setRole(Role.ADMIN);
         account.setIsActive(true);
         accountRepository.save(account);
         return new RegisterResponse("Account created successfully!");

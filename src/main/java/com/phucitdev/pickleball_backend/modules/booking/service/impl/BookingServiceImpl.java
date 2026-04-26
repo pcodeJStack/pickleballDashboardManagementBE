@@ -63,20 +63,20 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public CreateBookingResponse createBooking(CreateBookingRequest createBookingRequest) {
-        if (createBookingRequest.bookingDate().isBefore(LocalDate.now())) {
+        if (createBookingRequest.getBookingDate().isBefore(LocalDate.now())) {
             throw new BadRequestException("Không thể đặt ngày trong quá khứ!");
         }
         Account acc = SecurityUtils.getCurrentAccount();
         CustomerProfile cp = acc.getCustomerProfile();
-        Court court = courtRepository.findById(createBookingRequest.courtId())
+        Court court = courtRepository.findById(createBookingRequest.getCourtId())
                 .orElseThrow(() -> new NotFoundException("Sân không tồn tại!"));
-        TimeSlot slot = timeSlotRepository.findById(createBookingRequest.timeSlotId())
+        TimeSlot slot = timeSlotRepository.findById(createBookingRequest.getTimeSlotId())
                 .orElseThrow(() -> new NotFoundException("Khung giờ không tồn tại!"));
         boolean isBooked = bookingRepository
                 .existsByCourtIdAndTimeSlotIdAndBookingDate(
                         court.getId(),
                         slot.getId(),
-                        createBookingRequest.bookingDate()
+                        createBookingRequest.getBookingDate()
                 );
 
         if (isBooked) {
@@ -85,7 +85,7 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = new Booking();
         booking.setCourt(court);
         booking.setTimeSlot(slot);
-        booking.setBookingDate(createBookingRequest.bookingDate());
+        booking.setBookingDate(createBookingRequest.getBookingDate());
         booking.setCustomerProfile(cp);
         booking.setStatus(BookingStatus.PENDING);
         CourtPricing pricing = courtPricingRepository
