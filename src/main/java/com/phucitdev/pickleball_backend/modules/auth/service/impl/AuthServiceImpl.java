@@ -1,13 +1,13 @@
 package com.phucitdev.pickleball_backend.modules.auth.service.impl;
 import com.phucitdev.pickleball_backend.commo.config.websocket.handler.AuthWebSocketHandler;
-import com.phucitdev.pickleball_backend.commo.exception.auth.EmailAlreadyExistsException;
-import com.phucitdev.pickleball_backend.commo.exception.auth.InvalidCredentialsException;
-import com.phucitdev.pickleball_backend.commo.exception.auth.PhoneAlreadyExistsException;
+import com.phucitdev.pickleball_backend.commo.exception.auth.*;
 import com.phucitdev.pickleball_backend.modules.auth.dto.*;
 import com.phucitdev.pickleball_backend.modules.auth.entity.Account;
 import com.phucitdev.pickleball_backend.modules.auth.entity.CustomerProfile;
+import com.phucitdev.pickleball_backend.modules.auth.entity.RefreshToken;
 import com.phucitdev.pickleball_backend.modules.auth.entity.Role;
 import com.phucitdev.pickleball_backend.modules.auth.repository.AccountRepository;
+import com.phucitdev.pickleball_backend.modules.auth.repository.RefreshTokenRepository;
 import com.phucitdev.pickleball_backend.modules.auth.security.CustomUserDetails;
 import com.phucitdev.pickleball_backend.modules.auth.security.JwtTokenProvider;
 import com.phucitdev.pickleball_backend.modules.auth.service.AuthService;
@@ -20,6 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -31,15 +32,18 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager  authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthWebSocketHandler authWebSocketHandler;
+    private final RefreshTokenRepository refreshTokenRepository;
     public AuthServiceImpl(AccountRepository accountRepository,  PasswordEncoder passwordEncoder,
                            AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider,
-                           RedisTemplate<String, Object> redisTemplate, AuthWebSocketHandler authWebSocketHandler) {
+                           RedisTemplate<String, Object> redisTemplate, AuthWebSocketHandler authWebSocketHandler,
+                           RefreshTokenRepository refreshTokenRepository) {
         this.accountRepository = accountRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtTokenProvider = jwtTokenProvider;
         this.redisTemplate = redisTemplate;
         this.authWebSocketHandler = authWebSocketHandler;
+        this.refreshTokenRepository = refreshTokenRepository;
     }
     @Override
     public RegisterResponse register(RegisterRequest request) {
@@ -120,6 +124,29 @@ public class AuthServiceImpl implements AuthService {
         account.setCustomerProfile(cp);
         accountRepository.save(account);
         return  new CustomerRegisterResponse("Tài khoảng đăng ký thành công");
+    }
+
+    @Override
+    public RefreshTokenResponse refreshToken(RefreshTokenRequest request) {
+        String refreshToken  = request.getRefreshToken();
+        jwtTokenProvider.validateRefreshToken(refreshToken);
+        RefreshToken tokenInDb = refreshTokenRepository
+                .findByToken(refreshToken)
+                .orElseThrow(InvalidTokenException::new);
+        if (tokenInDb.isRevoked()) {
+            throw new InvalidTokenException();
+        }
+        if (tokenInDb.getExpiredAt().before(new Date())) {
+            tokenInDb.setRevoked(true);
+            refreshTokenRepository.save(tokenInDb);
+            throw new TokenExpiredException();
+        }
+        Account account = tokenInDb.getAccount();
+        String newAccessToken = jwtTokenProvider.generateAccessToken(
+                account.getId(),
+                account.getEmail()
+        );
+        return new  RefreshTokenResponse(newAccessToken);
     }
 
 }

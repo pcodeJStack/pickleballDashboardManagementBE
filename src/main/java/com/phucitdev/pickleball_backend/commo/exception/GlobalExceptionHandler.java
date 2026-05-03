@@ -72,13 +72,20 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InvalidTokenException.class)
-    public ApiResponse<?> handleInvalidToken(InvalidTokenException ex) {
-        return new ApiResponse<>(401, ex.getMessage(), null);
+    public ResponseEntity<ApiResponse<?>> handleInvalidToken(InvalidTokenException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ApiResponse<>(401, ex.getMessage(), null));
     }
 
     @ExceptionHandler(TokenExpiredException.class)
-    public ApiResponse<?> handleExpired(TokenExpiredException ex) {
-        return new ApiResponse<>(401, ex.getMessage(), null);
+    public ResponseEntity<ApiResponse<?>> handleExpired(TokenExpiredException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ApiResponse<>(401, ex.getMessage(), null));
+    }
+    @ExceptionHandler(InvalidTokenTypeException.class)
+    public ResponseEntity<ApiResponse<?>> handleInvalidTokenType(InvalidTokenTypeException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ApiResponse<>(401, ex.getMessage(), null));
     }
     @ExceptionHandler(InvalidDeviceIdException.class)
     public ResponseEntity<ApiResponse<?>> handleInvalidRequest(InvalidDeviceIdException ex) {

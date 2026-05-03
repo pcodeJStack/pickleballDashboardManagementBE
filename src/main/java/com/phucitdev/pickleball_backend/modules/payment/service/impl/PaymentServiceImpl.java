@@ -5,9 +5,11 @@ import com.phucitdev.pickleball_backend.modules.booking.dto.BookingStatus;
 import com.phucitdev.pickleball_backend.modules.booking.entity.Booking;
 import com.phucitdev.pickleball_backend.modules.booking.repository.BookingRepository;
 import com.phucitdev.pickleball_backend.modules.payment.dto.PaymentResponse;
+import com.phucitdev.pickleball_backend.modules.payment.dto.PaymentStatusResponseForPolling;
 import com.phucitdev.pickleball_backend.modules.payment.entity.Payment;
 import com.phucitdev.pickleball_backend.modules.payment.entity.PaymentMethod;
 import com.phucitdev.pickleball_backend.modules.payment.entity.PaymentStatus;
+import com.phucitdev.pickleball_backend.modules.payment.entity.PaymentTransaction;
 import com.phucitdev.pickleball_backend.modules.payment.repository.PaymentRepository;
 import com.phucitdev.pickleball_backend.modules.payment.service.PaymentService;
 import com.phucitdev.pickleball_backend.modules.payment.service.PayosService;
@@ -15,6 +17,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 @Service
@@ -54,7 +57,17 @@ public class PaymentServiceImpl implements PaymentService {
             payment.setPaidAt(null);
             payment.setCancelReason(null);
             payment.setCurrentTransactionCode(null);
+
+            PaymentTransaction paymentTransaction = new PaymentTransaction();
+            paymentTransaction.setPayment(payment);
+            paymentTransaction.setTransactionCode(String.valueOf(orderCode));
+            paymentTransaction.setAmount(payment.getAmount());
+            paymentTransaction.setStatus(PaymentStatus.PENDING);
+            paymentTransaction.setRawResponse(res.toString());
+            payment.setTransactions(List.of(paymentTransaction));
+            payment.setCurrentTransactionCode(paymentTransaction.getTransactionCode());
             paymentRepository.save(payment);
+
             return new PaymentResponse(
                     res.getCheckoutUrl(),
                     res.getQrCode(),
@@ -93,7 +106,17 @@ public class PaymentServiceImpl implements PaymentService {
             payment.setStatus(PaymentStatus.FAILED);
             payment.setCancelReason("Thanh toán thất bại");
         }
-
         paymentRepository.save(payment);
+    }
+
+    @Override
+    public PaymentStatusResponseForPolling checkingPaymentStatus(Long orderCode) {
+        Payment payment = paymentRepository.findByPayosOrderCode(orderCode)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy payment"));
+        return new PaymentStatusResponseForPolling(
+                payment.getStatus(),
+                payment.getBooking().getId(),
+                payment.getAmount()
+        );
     }
 }

@@ -19,8 +19,9 @@ import com.phucitdev.pickleball_backend.modules.court.repository.CourtPricingRep
 import com.phucitdev.pickleball_backend.modules.court.repository.CourtRepository;
 import com.phucitdev.pickleball_backend.modules.court.repository.TimeSlotRepository;
 import com.phucitdev.pickleball_backend.modules.payment.dto.PaymentResponse;
+import com.phucitdev.pickleball_backend.modules.payment.entity.Payment;
+import com.phucitdev.pickleball_backend.modules.payment.entity.PaymentTransaction;
 import com.phucitdev.pickleball_backend.modules.payment.service.PaymentService;
-import com.phucitdev.pickleball_backend.modules.payment.service.PayosService;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -95,6 +96,7 @@ public class BookingServiceImpl implements BookingService {
         booking.setPrice(price);
         bookingRepository.save(booking);
         PaymentResponse payment = paymentService.createPayment(booking.getId());
+
         return new CreateBookingResponse(
                 booking.getId(),
                 payment.getCheckoutUrl(),

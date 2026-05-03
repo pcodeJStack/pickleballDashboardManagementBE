@@ -31,4 +31,9 @@ public class AuthenticationAPI {
         CustomerRegisterResponse customerRegisterResponse = authService.customerRegister(customerRegisterRequest);
         return ResponseEntity.ok(customerRegisterResponse);
     }
+    @PostMapping("/api/auth/refresh-token")
+    public ResponseEntity<RefreshTokenResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest refreshTokenRequest) {
+        RefreshTokenResponse refreshTokenResponse = authService.refreshToken(refreshTokenRequest);
+        return ResponseEntity.ok(refreshTokenResponse);
+    }
 }

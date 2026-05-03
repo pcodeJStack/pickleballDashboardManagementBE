@@ -105,7 +105,6 @@ public class JwtTokenProvider {
                 .parseSignedClaims(token)
                 .getPayload();
     }
-
     private Claims getClaims(String token) {
         try {
             return parseWithKey(token, accessKey);
@@ -132,12 +131,11 @@ public class JwtTokenProvider {
 
     public void validateAccessToken(String token) {
         try {
-            Claims claims = parseWithKey(token, accessKey);
+            Claims claims = getClaims(token);
             String type = claims.get(TOKEN_TYPE, String.class);
             if (!ACCESS.equals(type)) {
                 throw new InvalidTokenTypeException();
             }
-
         } catch (ExpiredJwtException e) {
             throw new TokenExpiredException();
         } catch (JwtException | IllegalArgumentException e) {
@@ -145,15 +143,18 @@ public class JwtTokenProvider {
         }
     }
 
-    public boolean validateRefreshToken(String token) {
+    public void validateRefreshToken(String token) {
         try {
-            Claims claims = parseWithKey(token, refreshKey);
+            Claims claims = getClaims(token);
             String type = claims.get(TOKEN_TYPE, String.class);
-            return REFRESH.equals(claims.get(TOKEN_TYPE));
+            if(!REFRESH.equals(type)) {
+                throw new InvalidTokenTypeException();
+            }
         } catch (ExpiredJwtException e) {
-            throw new RuntimeException("Refresh token expired");
+
+            throw new TokenExpiredException();
         } catch (JwtException | IllegalArgumentException e) {
-            throw new RuntimeException("Invalid refresh token");
+            throw new InvalidTokenException();
         }
     }
 }
