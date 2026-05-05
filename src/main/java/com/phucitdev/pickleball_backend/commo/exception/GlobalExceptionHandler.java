@@ -1,10 +1,11 @@
 package com.phucitdev.pickleball_backend.commo.exception;
-import com.phucitdev.pickleball_backend.commo.exception.branch.BranchNotFoundException;
 import com.phucitdev.pickleball_backend.commo.exception.court.BadRequestException;
 import com.phucitdev.pickleball_backend.commo.exception.court.DuplicateResourceException;
 import com.phucitdev.pickleball_backend.commo.exception.notfound.NotFoundException;
+import com.phucitdev.pickleball_backend.commo.exception.otp.InvalidOtpException;
+import com.phucitdev.pickleball_backend.commo.exception.otp.OtpAlreadyUsedException;
+import com.phucitdev.pickleball_backend.commo.exception.otp.OtpExpiredException;
 import com.phucitdev.pickleball_backend.commo.exception.timeslot.InvalidTimeSlotException;
-import com.phucitdev.pickleball_backend.commo.exception.zone.ZoneNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,7 +14,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.phucitdev.pickleball_backend.commo.response.ApiResponse;
 import com.phucitdev.pickleball_backend.commo.exception.auth.*;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,6 +64,27 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.CONFLICT) //  409
                 .body(new ApiResponse<>(409, ex.getMessage(), null));
     }
+
+    // OTP
+    @ExceptionHandler(InvalidOtpException.class)
+    public ResponseEntity<ApiResponse<?>> handleInvalidOtp(InvalidOtpException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>(400, ex.getMessage(), null));
+    }
+
+    @ExceptionHandler(OtpExpiredException.class)
+    public ResponseEntity<ApiResponse<?>> handleOtpExpired(OtpExpiredException ex) {
+        return ResponseEntity.status(HttpStatus.GONE)
+                .body(new ApiResponse<>(410, ex.getMessage(), null));
+    }
+
+    @ExceptionHandler(OtpAlreadyUsedException.class)
+    public ResponseEntity<ApiResponse<?>> handleOtpUsed(OtpAlreadyUsedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ApiResponse<>(409, ex.getMessage(), null));
+    }
+
+
 
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ApiResponse<?>> handleNotFound(NotFoundException ex) {

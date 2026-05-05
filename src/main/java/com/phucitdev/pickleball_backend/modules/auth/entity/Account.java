@@ -33,4 +33,6 @@ public class Account extends BaseEntity {
 
     @OneToOne(mappedBy = "account", cascade = CascadeType.ALL)
     private CustomerProfile customerProfile;
+    @OneToMany(mappedBy = "account")
+    private List<OtpVerification>  otpVerifications;
 }

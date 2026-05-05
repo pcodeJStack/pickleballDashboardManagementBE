@@ -1,16 +1,17 @@
 package com.phucitdev.pickleball_backend.modules.auth.service.impl;
 import com.phucitdev.pickleball_backend.commo.config.websocket.handler.AuthWebSocketHandler;
 import com.phucitdev.pickleball_backend.commo.exception.auth.*;
+import com.phucitdev.pickleball_backend.commo.exception.notfound.NotFoundException;
 import com.phucitdev.pickleball_backend.modules.auth.dto.*;
-import com.phucitdev.pickleball_backend.modules.auth.entity.Account;
-import com.phucitdev.pickleball_backend.modules.auth.entity.CustomerProfile;
-import com.phucitdev.pickleball_backend.modules.auth.entity.RefreshToken;
-import com.phucitdev.pickleball_backend.modules.auth.entity.Role;
+import com.phucitdev.pickleball_backend.modules.auth.entity.*;
 import com.phucitdev.pickleball_backend.modules.auth.repository.AccountRepository;
+import com.phucitdev.pickleball_backend.modules.auth.repository.OtpRepository;
 import com.phucitdev.pickleball_backend.modules.auth.repository.RefreshTokenRepository;
 import com.phucitdev.pickleball_backend.modules.auth.security.CustomUserDetails;
 import com.phucitdev.pickleball_backend.modules.auth.security.JwtTokenProvider;
 import com.phucitdev.pickleball_backend.modules.auth.service.AuthService;
+import com.phucitdev.pickleball_backend.modules.auth.service.EmailService;
+import com.phucitdev.pickleball_backend.modules.auth.service.OtpService;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -21,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -33,10 +35,16 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthWebSocketHandler authWebSocketHandler;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final OtpService otpService;
+    private final OtpRepository otpRepository;
+    private final EmailService emailService;
     public AuthServiceImpl(AccountRepository accountRepository,  PasswordEncoder passwordEncoder,
                            AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider,
                            RedisTemplate<String, Object> redisTemplate, AuthWebSocketHandler authWebSocketHandler,
-                           RefreshTokenRepository refreshTokenRepository) {
+                           RefreshTokenRepository refreshTokenRepository,
+                           OtpRepository otpRepository,
+                           OtpService otpService,
+                           EmailService emailService) {
         this.accountRepository = accountRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
@@ -44,6 +52,9 @@ public class AuthServiceImpl implements AuthService {
         this.redisTemplate = redisTemplate;
         this.authWebSocketHandler = authWebSocketHandler;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.otpService = otpService;
+        this.otpRepository = otpRepository;
+        this.emailService = emailService;
     }
     @Override
     public RegisterResponse register(RegisterRequest request) {
@@ -122,7 +133,21 @@ public class AuthServiceImpl implements AuthService {
         cp.setAccount(account);
         cp.setAvatar(null);
         account.setCustomerProfile(cp);
-        accountRepository.save(account);
+        Account acc =  accountRepository.save(account);
+        String otp  = otpService.generateOtp();
+        OtpVerification otpVerification = new OtpVerification();
+        otpVerification.setEmail(acc.getEmail());
+        otpVerification.setOtpCode(otp);
+        otpVerification.setExpiryTime(new Date(System.currentTimeMillis() + 1 * 60 * 1000));
+        otpVerification.setAccount(acc);
+        otpRepository.save(otpVerification);
+        // gửi mail
+        EmailDetails emailDetails = new EmailDetails();
+        emailDetails.setReceiver(acc);
+        emailDetails.setSubject("Your OTP Code for Account Verification");
+        emailDetails.setOtpCode(otp);
+        emailDetails.setExpiryTime( new Date(System.currentTimeMillis() + 60_000));
+        emailService.sendOtpMail(emailDetails);
         return  new CustomerRegisterResponse("Tài khoảng đăng ký thành công");
     }
 
@@ -147,6 +172,15 @@ public class AuthServiceImpl implements AuthService {
                 account.getEmail()
         );
         return new  RefreshTokenResponse(newAccessToken);
+    }
+
+    @Override
+    public void verifyOtp(VerifyOtpRequest request) {
+        Account account = accountRepository.findByEmail(request.getEmail())
+                .orElseThrow(() ->
+                        new NotFoundException("Account not found with email: " + request.getEmail())
+                );
+        otpService.validateOtp(account, request.getOtpInput());
     }
 
 }

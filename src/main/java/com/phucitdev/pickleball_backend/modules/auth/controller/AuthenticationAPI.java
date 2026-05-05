@@ -8,6 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 @RestController
 @CrossOrigin("*")
 public class AuthenticationAPI {
@@ -35,5 +39,12 @@ public class AuthenticationAPI {
     public ResponseEntity<RefreshTokenResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest refreshTokenRequest) {
         RefreshTokenResponse refreshTokenResponse = authService.refreshToken(refreshTokenRequest);
         return ResponseEntity.ok(refreshTokenResponse);
+    }
+    @PostMapping("/api/auth/verify-otp")
+    public ResponseEntity verifyOtp(@Valid @RequestBody VerifyOtpRequest verifyOtpRequest){
+        authService.verifyOtp(verifyOtpRequest);
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("message","Verify OTP Successful");
+        return ResponseEntity.ok(response);
     }
 }

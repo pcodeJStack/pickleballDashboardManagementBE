@@ -8,5 +8,6 @@ public interface AuthService {
     LoginResponse login(LoginRequest request);
     CustomerRegisterResponse  customerRegister(CustomerRegisterRequest request);
     RefreshTokenResponse refreshToken(RefreshTokenRequest request);
+    void verifyOtp(VerifyOtpRequest request);
 
 }
