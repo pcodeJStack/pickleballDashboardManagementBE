@@ -5,10 +5,12 @@ import com.phucitdev.pickleball_backend.commo.exception.otp.InvalidOtpException;
 import com.phucitdev.pickleball_backend.commo.exception.otp.OtpAlreadyUsedException;
 import com.phucitdev.pickleball_backend.commo.exception.otp.OtpExpiredException;
 import com.phucitdev.pickleball_backend.commo.exception.otp.OtpNotFoundException;
+import com.phucitdev.pickleball_backend.modules.auth.dto.EmailDetails;
 import com.phucitdev.pickleball_backend.modules.auth.entity.Account;
 import com.phucitdev.pickleball_backend.modules.auth.entity.OtpVerification;
 import com.phucitdev.pickleball_backend.modules.auth.repository.AccountRepository;
 import com.phucitdev.pickleball_backend.modules.auth.repository.OtpRepository;
+import com.phucitdev.pickleball_backend.modules.auth.service.EmailService;
 import com.phucitdev.pickleball_backend.modules.auth.service.OtpService;
 import org.springframework.stereotype.Service;
 
@@ -19,9 +21,11 @@ import java.util.Random;
 public class OtpServiceImpl  implements OtpService {
     private final OtpRepository otpRepository;
     private final AccountRepository accountRepository;
-    public  OtpServiceImpl(OtpRepository otpRepository, AccountRepository accountRepository) {
+    private final EmailService emailService;
+    public  OtpServiceImpl(OtpRepository otpRepository, AccountRepository accountRepository, EmailService emailService) {
         this.otpRepository = otpRepository;
         this.accountRepository = accountRepository;
+        this.emailService = emailService;
     }
     private final Random random = new Random();
     @Override
@@ -58,4 +62,28 @@ public class OtpServiceImpl  implements OtpService {
         accountRepository.save(account);
         return true;
     }
+
+    @Override
+    public boolean resendOtp(Account account) {
+        String otp = generateOtp();
+        Date expiryTime = new Date(System.currentTimeMillis() + 1 * 60 * 1000);
+
+        OtpVerification otpnew = new OtpVerification();
+        otpnew.setEmail(account.getEmail());
+        otpnew.setOtpCode(otp);
+        otpnew.setExpiryTime(expiryTime);
+        otpnew.setUsed(false);
+        otpnew.setAccount(account);
+        otpRepository.save(otpnew);
+
+        EmailDetails emailDetails = new EmailDetails();
+        emailDetails.setReceiver(account);
+        emailDetails.setSubject("Your new OTP Code for Account Verification");
+        emailDetails.setOtpCode(otp);
+        emailDetails.setExpiryTime(expiryTime);
+        emailService.sendOtpMail(emailDetails);
+        return true;
+    }
+
+
 }

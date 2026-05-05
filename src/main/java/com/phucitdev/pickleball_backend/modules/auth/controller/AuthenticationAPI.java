@@ -47,4 +47,11 @@ public class AuthenticationAPI {
         response.put("message","Verify OTP Successful");
         return ResponseEntity.ok(response);
     }
+    @PostMapping("/api/auth/resend-otp")
+    public ResponseEntity resendOtp(@Valid @RequestBody ResendOtpRequest resendOtpRequest){
+        authService.resendOtp(resendOtpRequest);
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("message","Resend OTP Successful");
+        return ResponseEntity.ok(response);
+    }
 }

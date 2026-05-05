@@ -183,4 +183,12 @@ public class AuthServiceImpl implements AuthService {
         otpService.validateOtp(account, request.getOtpInput());
     }
 
+    @Override
+    public void resendOtp(ResendOtpRequest request) {
+        Account account = accountRepository.findByEmail(request.getEmail())
+                .orElseThrow(() ->
+                        new NotFoundException("Account not found with email: " + request.getEmail())
+                );
+        otpService.resendOtp(account);
+    }
 }
