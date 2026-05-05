@@ -77,7 +77,7 @@ public class OtpServiceImpl  implements OtpService {
         otpRepository.save(otpnew);
 
         EmailDetails emailDetails = new EmailDetails();
-        emailDetails.setReceiver(account);
+        emailDetails.setEmail(account.getEmail());
         emailDetails.setSubject("Your new OTP Code for Account Verification");
         emailDetails.setOtpCode(otp);
         emailDetails.setExpiryTime(expiryTime);

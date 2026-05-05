@@ -22,7 +22,7 @@ public class EmailServiceImpl implements EmailService {
         try {
             // Truyền dữ liệu vào Thymeleaf template
             Context context = new Context();
-            context.setVariable("email", emailDetails.getReceiver().getEmail());
+            context.setVariable("email", emailDetails.getEmail());
             context.setVariable("otpCode", emailDetails.getOtpCode());
             context.setVariable("expiryTime", emailDetails.getExpiryTime());
 
@@ -34,7 +34,7 @@ public class EmailServiceImpl implements EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
             helper.setFrom("phucp9698@gmail.com");
-            helper.setTo(emailDetails.getReceiver().getEmail());
+            helper.setTo(emailDetails.getEmail());
             helper.setSubject(emailDetails.getSubject());
             helper.setText(template, true); // true = gửi dạng HTML
 

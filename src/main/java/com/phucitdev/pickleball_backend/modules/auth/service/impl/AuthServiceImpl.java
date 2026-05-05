@@ -1,4 +1,5 @@
 package com.phucitdev.pickleball_backend.modules.auth.service.impl;
+import com.phucitdev.pickleball_backend.messaging.config.RabbitConfig;
 import com.phucitdev.pickleball_backend.commo.config.websocket.handler.AuthWebSocketHandler;
 import com.phucitdev.pickleball_backend.commo.exception.auth.*;
 import com.phucitdev.pickleball_backend.commo.exception.notfound.NotFoundException;
@@ -12,17 +13,16 @@ import com.phucitdev.pickleball_backend.modules.auth.security.JwtTokenProvider;
 import com.phucitdev.pickleball_backend.modules.auth.service.AuthService;
 import com.phucitdev.pickleball_backend.modules.auth.service.EmailService;
 import com.phucitdev.pickleball_backend.modules.auth.service.OtpService;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -38,12 +38,14 @@ public class AuthServiceImpl implements AuthService {
     private final OtpService otpService;
     private final OtpRepository otpRepository;
     private final EmailService emailService;
+    private final RabbitTemplate rabbitTemplate;
     public AuthServiceImpl(AccountRepository accountRepository,  PasswordEncoder passwordEncoder,
                            AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider,
                            RedisTemplate<String, Object> redisTemplate, AuthWebSocketHandler authWebSocketHandler,
                            RefreshTokenRepository refreshTokenRepository,
                            OtpRepository otpRepository,
                            OtpService otpService,
+                           RabbitTemplate rabbitTemplate,
                            EmailService emailService) {
         this.accountRepository = accountRepository;
         this.passwordEncoder = passwordEncoder;
@@ -55,6 +57,7 @@ public class AuthServiceImpl implements AuthService {
         this.otpService = otpService;
         this.otpRepository = otpRepository;
         this.emailService = emailService;
+        this.rabbitTemplate = rabbitTemplate;
     }
     @Override
     public RegisterResponse register(RegisterRequest request) {
@@ -134,6 +137,7 @@ public class AuthServiceImpl implements AuthService {
         cp.setAvatar(null);
         account.setCustomerProfile(cp);
         Account acc =  accountRepository.save(account);
+
         String otp  = otpService.generateOtp();
         OtpVerification otpVerification = new OtpVerification();
         otpVerification.setEmail(acc.getEmail());
@@ -141,13 +145,18 @@ public class AuthServiceImpl implements AuthService {
         otpVerification.setExpiryTime(new Date(System.currentTimeMillis() + 1 * 60 * 1000));
         otpVerification.setAccount(acc);
         otpRepository.save(otpVerification);
-        // gửi mail
-        EmailDetails emailDetails = new EmailDetails();
-        emailDetails.setReceiver(acc);
-        emailDetails.setSubject("Your OTP Code for Account Verification");
-        emailDetails.setOtpCode(otp);
-        emailDetails.setExpiryTime( new Date(System.currentTimeMillis() + 60_000));
-        emailService.sendOtpMail(emailDetails);
+
+        EmailDetails emailDetails = new EmailDetails(
+                acc.getEmail(),
+                "Your OTP Code for Account Verification",
+                otp,
+                new Date(System.currentTimeMillis() + 60_000)
+        );
+        rabbitTemplate.convertAndSend(
+                RabbitConfig.EXCHANGE,
+                RabbitConfig.ROUTING_KEY,
+                emailDetails
+        );
         return  new CustomerRegisterResponse("Tài khoảng đăng ký thành công");
     }
 
