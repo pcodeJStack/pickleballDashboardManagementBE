@@ -15,6 +15,7 @@ import com.phucitdev.pickleball_backend.modules.payment.service.PaymentService;
 import com.phucitdev.pickleball_backend.modules.payment.service.PayosService;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import vn.payos.PayOS;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,10 +26,12 @@ public class PaymentServiceImpl implements PaymentService {
     private final BookingRepository bookingRepository;
     private final PaymentRepository paymentRepository;
     private final PayosService payosService;
-    public PaymentServiceImpl(BookingRepository bookingRepository, PaymentRepository paymentRepository, PayosService payosService) {
+    private final PayOS payOS;
+    public PaymentServiceImpl(BookingRepository bookingRepository, PaymentRepository paymentRepository, PayosService payosService, PayOS payOS) {
         this.bookingRepository = bookingRepository;
         this.paymentRepository = paymentRepository;
         this.payosService = payosService;
+        this.payOS = payOS;
     }
     @Override
     public PaymentResponse  createPayment(UUID bookingId) {
@@ -91,16 +94,28 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentRepository
                 .findByPayosOrderCode(orderCode)
                 .orElseThrow(() -> new NotFoundException("Payment not found"));
-        // tránh xử lý lại
+
         if (payment.getStatus() == PaymentStatus.SUCCESS) {
             return;
         }
+        Booking booking = payment.getBooking();
         if ("00".equals(code)) {
-            payment.setStatus(PaymentStatus.SUCCESS);
-            payment.setPaidAt(LocalDateTime.now());
-            Booking booking = payment.getBooking();
-            booking.setStatus(BookingStatus.CONFIRMED);
-            bookingRepository.save(booking);
+            int updated = bookingRepository.updateStatusIfMatch(
+                    booking.getId(),
+                    BookingStatus.PENDING,
+                    BookingStatus.CONFIRMED,
+                    "ACTIVE"
+            );
+            if (updated == 1) {
+                payment.setStatus(PaymentStatus.SUCCESS);
+                payment.setPaidAt(LocalDateTime.now());
+            } else {
+                // 👉 booking đã bị CANCEL trước đó
+                // tuỳ business:
+                // - vẫn set SUCCESS
+                // - hoặc log để xử lý hoàn tiền
+                payment.setStatus(PaymentStatus.SUCCESS);
+            }
 
         } else {
             payment.setStatus(PaymentStatus.FAILED);
@@ -119,4 +134,6 @@ public class PaymentServiceImpl implements PaymentService {
                 payment.getAmount()
         );
     }
+
+
 }

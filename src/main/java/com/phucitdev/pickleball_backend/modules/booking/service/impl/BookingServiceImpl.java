@@ -2,6 +2,7 @@ package com.phucitdev.pickleball_backend.modules.booking.service.impl;
 
 import com.phucitdev.pickleball_backend.commo.exception.court.BadRequestException;
 import com.phucitdev.pickleball_backend.commo.exception.notfound.NotFoundException;
+import com.phucitdev.pickleball_backend.messaging.config.RabbitConfig;
 import com.phucitdev.pickleball_backend.modules.auth.entity.Account;
 import com.phucitdev.pickleball_backend.modules.auth.entity.CustomerProfile;
 import com.phucitdev.pickleball_backend.modules.auth.security.SecurityUtils;
@@ -23,6 +24,7 @@ import com.phucitdev.pickleball_backend.modules.payment.entity.Payment;
 import com.phucitdev.pickleball_backend.modules.payment.entity.PaymentTransaction;
 import com.phucitdev.pickleball_backend.modules.payment.service.PaymentService;
 import jakarta.transaction.Transactional;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -39,12 +41,14 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final CourtPricingRepository courtPricingRepository;
     private final PaymentService paymentService;
-    public  BookingServiceImpl(CourtRepository courtRepository, TimeSlotRepository timeSlotRepository, BookingRepository bookingRepository, CourtPricingRepository courtPricingRepository, PaymentService  paymentService) {
+    private final RabbitTemplate rabbitTemplate;
+    public  BookingServiceImpl(CourtRepository courtRepository, TimeSlotRepository timeSlotRepository, BookingRepository bookingRepository, CourtPricingRepository courtPricingRepository, PaymentService  paymentService, RabbitTemplate rabbitTemplate) {
         this.courtRepository = courtRepository;
         this.timeSlotRepository = timeSlotRepository;
         this.bookingRepository = bookingRepository;
         this.courtPricingRepository = courtPricingRepository;
         this.paymentService = paymentService;
+        this.rabbitTemplate = rabbitTemplate;
     }
     @Override
     public Page<TimeSlotResponse> getAvailableSlots(UUID courtId, LocalDate date, Pageable pageable) {
@@ -74,10 +78,11 @@ public class BookingServiceImpl implements BookingService {
         TimeSlot slot = timeSlotRepository.findById(createBookingRequest.getTimeSlotId())
                 .orElseThrow(() -> new NotFoundException("Khung giờ không tồn tại!"));
         boolean isBooked = bookingRepository
-                .existsByCourtIdAndTimeSlotIdAndBookingDate(
+                .existsByCourtIdAndTimeSlotIdAndBookingDateAndStatus(
                         court.getId(),
                         slot.getId(),
-                        createBookingRequest.getBookingDate()
+                        createBookingRequest.getBookingDate(),
+                        BookingStatus.CONFIRMED
                 );
 
         if (isBooked) {
@@ -88,13 +93,20 @@ public class BookingServiceImpl implements BookingService {
         booking.setTimeSlot(slot);
         booking.setBookingDate(createBookingRequest.getBookingDate());
         booking.setCustomerProfile(cp);
+        booking.setActive("ACTIVE");
         booking.setStatus(BookingStatus.PENDING);
         CourtPricing pricing = courtPricingRepository
                 .findByCourtIdAndTimeSlotId(court.getId(), slot.getId())
                 .orElseThrow(() -> new NotFoundException("Chưa cấu hình giá cho khung giờ này!"));
         BigDecimal price = pricing.getPrice();
         booking.setPrice(price);
-        bookingRepository.save(booking);
+       bookingRepository.save(booking);
+        rabbitTemplate.convertAndSend(
+                RabbitConfig.BOOKING_EXCHANGE,
+                RabbitConfig.BOOKING_DELAY_ROUTING,
+                booking.getId()
+        );
+
         PaymentResponse payment = paymentService.createPayment(booking.getId());
 
         return new CreateBookingResponse(

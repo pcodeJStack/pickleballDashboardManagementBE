@@ -131,7 +131,7 @@ public class AuthServiceImpl implements AuthService {
         account.setFullName(request.getFullName());
         account.setPhone(request.getPhone());
         account.setRole(Role.CUSTOMER);
-        account.setIsActive(true);
+        account.setIsActive(false);
         CustomerProfile cp = new CustomerProfile();
         cp.setAccount(account);
         cp.setAvatar(null);
@@ -153,8 +153,8 @@ public class AuthServiceImpl implements AuthService {
                 new Date(System.currentTimeMillis() + 60_000)
         );
         rabbitTemplate.convertAndSend(
-                RabbitConfig.EXCHANGE,
-                RabbitConfig.ROUTING_KEY,
+                RabbitConfig.OTP_EXCHANGE,
+                RabbitConfig.OTP_ROUTING_KEY,
                 emailDetails
         );
         return  new CustomerRegisterResponse("Tài khoảng đăng ký thành công");

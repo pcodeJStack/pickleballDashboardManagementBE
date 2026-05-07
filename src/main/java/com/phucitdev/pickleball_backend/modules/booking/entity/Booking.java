@@ -22,11 +22,13 @@ import java.time.LocalDate;
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "uk_booking_court_date_slot",
-                        columnNames = {"court_id", "booking_date", "time_slot_id"}
+                        columnNames = {"court_id", "booking_date", "time_slot_id", "active"}
                 )
         }
 )
 public class Booking extends BaseEntity {
+    @Column(name = "active", nullable = false)
+    private String active;
     private LocalDate bookingDate;  // ngày đặt
     private BigDecimal price;   // giá tại thời điểm đặt là bao nhiêu
     @Enumerated(EnumType.STRING)

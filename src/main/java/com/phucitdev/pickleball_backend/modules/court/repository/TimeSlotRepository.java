@@ -20,6 +20,7 @@ public interface TimeSlotRepository extends JpaRepository<TimeSlot, UUID> {
     boolean existsOverlapping(LocalTime startTime, LocalTime endTime);
     Page<TimeSlot> findByIsDeletedFalse(Pageable pageable);
 
+
     @Query("""
     SELECT ts FROM CourtPricing cp
     JOIN cp.timeSlot ts
@@ -31,6 +32,7 @@ public interface TimeSlotRepository extends JpaRepository<TimeSlot, UUID> {
         WHERE b.court.id = :courtId
         AND b.bookingDate = :date
         AND b.timeSlot = ts
+        AND b.status = 'CONFIRMED'
     )
 """)
     Page<TimeSlot> findAvailableSlots(

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class OtpConsumer {
     private final EmailService emailService;
-    @RabbitListener(queues = RabbitConfig.QUEUE)
+    @RabbitListener(queues = RabbitConfig.OTP_QUEUE, concurrency = "3-5")
     public void receive(EmailDetails emailDetails) {
         try {
             emailService.sendOtpMail(emailDetails);
