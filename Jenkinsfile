@@ -3,29 +3,22 @@ pipeline {
 
     stages {
 
-        stage('Build Maven') {
+        stage('Deploy') {
             steps {
-                sh 'mvn clean package -DskipTests'
-            }
-        }
+                sh '''
+                cd /opt/app/pickleballDashboardManagementBE
 
-        stage('Docker Compose Down') {
-            steps {
-                sh 'docker-compose down'
-            }
-        }
+                git pull
 
-        stage('Docker Build') {
-            steps {
-                sh 'docker-compose build --no-cache'
-            }
-        }
+                mvn clean package -DskipTests
 
-        stage('Docker Up') {
-            steps {
-                sh 'docker-compose up -d'
+                docker-compose down
+
+                docker-compose build --no-cache
+
+                docker-compose up -d
+                '''
             }
         }
     }
 }
-   
