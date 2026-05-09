@@ -116,33 +116,33 @@ public class BookingServiceImpl implements BookingService {
                 payment.getOrderCode());
     }
 
-//    @Override
-//    public Page<BookingHistoryResponse> getMyBookings(Pageable pageable) {
-//        Account acc = SecurityUtils.getCurrentAccount();
-//        UUID customerId = acc.getCustomerProfile().getId();
-//        Page<Booking> bookingPage = bookingRepository.findByCustomerProfileId(customerId, pageable);
-//        List<BookingHistoryResponse> responseList = new ArrayList<>();
-//        for (Booking booking : bookingPage.getContent()) {
-//            BookingHistoryResponse response = new BookingHistoryResponse();
-//            response.setId(booking.getId());
-//            response.setCourtName(booking.getCourt().getName());
-//            response.setCourtNumber(booking.getCourt().getCourtNumber());
-//            response.setCourtType(booking.getCourt().getCourtType());
-//            response.setSurfaceType(booking.getCourt().getSurfaceType());
-//            response.setImageUrl(booking.getCourt().getImageUrl());
-//            response.setLocation(booking.getCourt().getLocation());
-//            response.setMaxPlayers(booking.getCourt().getMaxPlayers());
-//            response.setBookingDate(booking.getBookingDate());
-//            response.setStartTime(booking.getTimeSlot().getStartTime());
-//            response.setEndTime(booking.getTimeSlot().getEndTime());
-//            response.setStatus(booking.getStatus().name());
-//            response.setTotalPrice(booking.getPrice());
-//            responseList.add(response);
-//        }
-//        return new PageImpl<>(
-//                responseList,
-//                pageable,
-//                bookingPage.getTotalElements()
-//        );
-//    }
+    @Override
+    public Page<BookingHistoryResponse> getMyBookings(Pageable pageable) {
+        Account acc = SecurityUtils.getCurrentAccount();
+        UUID customerId = acc.getCustomerProfile().getId();
+        Page<Booking> bookingPage = bookingRepository.findByCustomerProfileId(customerId, pageable);
+        List<BookingHistoryResponse> responseList = new ArrayList<>();
+        for (Booking booking : bookingPage.getContent()) {
+            BookingHistoryResponse response = new BookingHistoryResponse();
+            response.setId(booking.getId());
+            response.setCourtName(booking.getCourt().getName());
+            response.setCourtNumber(booking.getCourt().getCourtNumber());
+            response.setCourtType(booking.getCourt().getCourtType());
+            response.setSurfaceType(booking.getCourt().getSurfaceType());
+            response.setImageUrl(booking.getCourt().getImageUrl());
+            response.setLocation(booking.getCourt().getLocation());
+            response.setMaxPlayers(booking.getCourt().getMaxPlayers());
+            response.setBookingDate(booking.getBookingDate());
+            response.setStartTime(booking.getTimeSlot().getStartTime());
+            response.setEndTime(booking.getTimeSlot().getEndTime());
+            response.setStatus(booking.getStatus().name());
+            response.setTotalPrice(booking.getPrice());
+            responseList.add(response);
+        }
+        return new PageImpl<>(
+                responseList,
+                pageable,
+                bookingPage.getTotalElements()
+        );
+    }
 }
