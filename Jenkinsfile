@@ -22,7 +22,8 @@ pipeline {
            steps {
         sh '''
         cd /opt/app/pickleballDashboardManagementBE
-
+        git fetch --all
+        git reset --hard origin/main
         docker-compose down
         docker-compose up -d --build
         '''
