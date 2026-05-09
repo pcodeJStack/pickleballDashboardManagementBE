@@ -1,6 +1,7 @@
 package com.phucitdev.pickleball_backend.modules.booking.controller;
 
 
+import com.phucitdev.pickleball_backend.modules.booking.dto.BookingHistoryResponse;
 import com.phucitdev.pickleball_backend.modules.booking.dto.CreateBookingRequest;
 import com.phucitdev.pickleball_backend.modules.booking.dto.CreateBookingResponse;
 import com.phucitdev.pickleball_backend.modules.booking.dto.TimeSlotResponse;
@@ -31,7 +32,22 @@ public class BookingAPI {
     public ResponseEntity<CreateBookingResponse> bookingCourt(@Valid @RequestBody CreateBookingRequest bookingRequest){
         return ResponseEntity.ok(bookingService.createBooking(bookingRequest));
     }
+    @GetMapping("/api/my-bookings")
+    public ResponseEntity<Page<BookingHistoryResponse>> getMyBookings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
 
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("createdAt").descending()
+        );
+
+        return ResponseEntity.ok(
+                bookingService.getMyBookings(pageable)
+        );
+    }
     @GetMapping("/api/available-slots")
     public ResponseEntity<Page<TimeSlotResponse>> getAvailableSlots(
             @RequestParam UUID courtId,

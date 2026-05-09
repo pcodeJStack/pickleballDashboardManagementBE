@@ -11,11 +11,11 @@ import java.util.List;
 @Configuration
 public class OpenApiConfig {
 
-    @Bean
-    public OpenAPI customOpenAPI() {
-        return new OpenAPI()
-                .servers(List.of(
-                        new Server().url("https://crm.singles")
-                ));
-    }
+//    @Bean
+//    public OpenAPI customOpenAPI() {
+//        return new OpenAPI()
+//                .servers(List.of(
+//                        new Server().url("https://crm.singles")
+//                ));
+//    }
 }

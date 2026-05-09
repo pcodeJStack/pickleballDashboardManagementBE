@@ -6,10 +6,7 @@ import com.phucitdev.pickleball_backend.messaging.config.RabbitConfig;
 import com.phucitdev.pickleball_backend.modules.auth.entity.Account;
 import com.phucitdev.pickleball_backend.modules.auth.entity.CustomerProfile;
 import com.phucitdev.pickleball_backend.modules.auth.security.SecurityUtils;
-import com.phucitdev.pickleball_backend.modules.booking.dto.BookingStatus;
-import com.phucitdev.pickleball_backend.modules.booking.dto.CreateBookingRequest;
-import com.phucitdev.pickleball_backend.modules.booking.dto.CreateBookingResponse;
-import com.phucitdev.pickleball_backend.modules.booking.dto.TimeSlotResponse;
+import com.phucitdev.pickleball_backend.modules.booking.dto.*;
 import com.phucitdev.pickleball_backend.modules.booking.entity.Booking;
 import com.phucitdev.pickleball_backend.modules.booking.repository.BookingRepository;
 import com.phucitdev.pickleball_backend.modules.booking.service.BookingService;
@@ -26,12 +23,15 @@ import com.phucitdev.pickleball_backend.modules.payment.service.PaymentService;
 import jakarta.transaction.Transactional;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -114,5 +114,35 @@ public class BookingServiceImpl implements BookingService {
                 payment.getCheckoutUrl(),
                 payment.getQrCode(),
                 payment.getOrderCode());
+    }
+
+    @Override
+    public Page<BookingHistoryResponse> getMyBookings(Pageable pageable) {
+        Account acc = SecurityUtils.getCurrentAccount();
+        UUID customerId = acc.getCustomerProfile().getId();
+        Page<Booking> bookingPage = bookingRepository.findByCustomerProfileId(customerId, pageable);
+        List<BookingHistoryResponse> responseList = new ArrayList<>();
+        for (Booking booking : bookingPage.getContent()) {
+            BookingHistoryResponse response = new BookingHistoryResponse();
+            response.setId(booking.getId());
+            response.setCourtName(booking.getCourt().getName());
+            response.setCourtNumber(booking.getCourt().getCourtNumber());
+            response.setCourtType(booking.getCourt().getCourtType());
+            response.setSurfaceType(booking.getCourt().getSurfaceType());
+            response.setImageUrl(booking.getCourt().getImageUrl());
+            response.setLocation(booking.getCourt().getLocation());
+            response.setMaxPlayers(booking.getCourt().getMaxPlayers());
+            response.setBookingDate(booking.getBookingDate());
+            response.setStartTime(booking.getTimeSlot().getStartTime());
+            response.setEndTime(booking.getTimeSlot().getEndTime());
+            response.setStatus(booking.getStatus().name());
+            response.setTotalPrice(booking.getPrice());
+            responseList.add(response);
+        }
+        return new PageImpl<>(
+                responseList,
+                pageable,
+                bookingPage.getTotalElements()
+        );
     }
 }

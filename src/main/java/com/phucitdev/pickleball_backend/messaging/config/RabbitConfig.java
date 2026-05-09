@@ -38,7 +38,7 @@ public class RabbitConfig {
         return QueueBuilder.durable(BOOKING_DELAY_QUEUE)
                 .withArgument("x-dead-letter-exchange", BOOKING_EXCHANGE)
                 .withArgument("x-dead-letter-routing-key", BOOKING_PROCESS_ROUTING)
-                .withArgument("x-message-ttl", 1 * 60 * 1000)
+                .withArgument("x-message-ttl", 15 * 60 * 1000)
                 .build();
     }
     @Bean

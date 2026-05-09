@@ -110,7 +110,7 @@ public class PaymentServiceImpl implements PaymentService {
                 payment.setStatus(PaymentStatus.SUCCESS);
                 payment.setPaidAt(LocalDateTime.now());
             } else {
-                // 👉 booking đã bị CANCEL trước đó
+                //  booking đã bị CANCEL trước đó
                 // tuỳ business:
                 // - vẫn set SUCCESS
                 // - hoặc log để xử lý hoàn tiền

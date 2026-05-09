@@ -1,4 +1,5 @@
 package com.phucitdev.pickleball_backend.modules.booking.service;
+import com.phucitdev.pickleball_backend.modules.booking.dto.BookingHistoryResponse;
 import com.phucitdev.pickleball_backend.modules.booking.dto.CreateBookingRequest;
 import com.phucitdev.pickleball_backend.modules.booking.dto.CreateBookingResponse;
 import com.phucitdev.pickleball_backend.modules.booking.dto.TimeSlotResponse;
@@ -9,4 +10,5 @@ import java.util.UUID;
 public interface BookingService {
     Page<TimeSlotResponse> getAvailableSlots(UUID courtId, LocalDate date, Pageable pageable);
     CreateBookingResponse createBooking(CreateBookingRequest createBookingRequest);
+    Page<BookingHistoryResponse> getMyBookings(Pageable pageable);
 }
