@@ -24,6 +24,8 @@ pipeline {
         cd /opt/app/pickleballDashboardManagementBE
         git fetch --all
         git reset --hard origin/main
+        chmod +x mvnw
+        ./mvnw clean package -DskipTests
         docker-compose down
         docker-compose up -d --build
         '''
