@@ -19,12 +19,14 @@ pipeline {
         }
 
         stage('Deploy') {
-            steps {
-                sh '''
-                docker-compose down
-                docker-compose up -d --build
-                '''
-            }
+           steps {
+        sh '''
+        cd /opt/app/pickleballDashboardManagementBE
+
+        docker-compose down
+        docker-compose up -d --build
+        '''
+           }
         }
     }
 }
