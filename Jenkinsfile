@@ -10,7 +10,9 @@ pipeline {
 
                 git pull
 
-                mvn clean package -DskipTests
+                chmod +x mvnw
+
+                ./mvnw clean package -DskipTests
 
                 docker-compose down
 
