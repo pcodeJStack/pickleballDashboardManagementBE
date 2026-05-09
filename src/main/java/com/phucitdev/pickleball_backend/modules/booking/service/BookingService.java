@@ -10,5 +10,5 @@ import java.util.UUID;
 public interface BookingService {
     Page<TimeSlotResponse> getAvailableSlots(UUID courtId, LocalDate date, Pageable pageable);
     CreateBookingResponse createBooking(CreateBookingRequest createBookingRequest);
-//    Page<BookingHistoryResponse> getMyBookings(Pageable pageable);
+    Page<BookingHistoryResponse> getMyBookings(Pageable pageable);
 }
