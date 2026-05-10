@@ -48,8 +48,12 @@ pipeline {
                 docker pull phucitdev/pickleball-backend:latest &&
                 docker stop backend || true &&
                 docker rm backend || true &&
-                docker run -d --name backend -p 8080:8080 --restart always phucitdev/pickleball-backend:latest
-                "
+                docker run -d \
+                --name backend \
+                --network pickleball-network \
+                -p 8080:8080 \
+                --restart always \
+                phucitdev/pickleball-backend:latest                "
                 '''
             }
         }
