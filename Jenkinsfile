@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        IMAGE_NAME = "phucitdev/pickleball-backend:latest"
+    }
+
     stages {
 
         stage('Checkout') {
@@ -18,18 +22,36 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
-           steps {
-        sh '''
-        cd /opt/app/pickleballDashboardManagementBE
-        git fetch --all
-        git reset --hard origin/main
-        chmod +x mvnw
-        ./mvnw clean package -DskipTests
-        docker-compose down
-        docker-compose up -d --build
-        '''
-           }
+        stage('Build Docker Image') {
+            steps {
+                sh '''
+                docker build -t $IMAGE_NAME .
+                '''
+            }
+        }
+
+        stage('Push Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    sh '''
+                    echo $PASS | docker login -u $USER --password-stdin
+                    docker push $IMAGE_NAME
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy to VPS') {
+            steps {
+                sh '''
+                ssh root@178.128.113.47 "
+                docker pull phucitdev/pickleball-backend:latest &&
+                docker stop backend || true &&
+                docker rm backend || true &&
+                docker run -d --name backend -p 8080:8080 --restart always phucitdev/pickleball-backend:latest
+                "
+                '''
+            }
         }
     }
 }
