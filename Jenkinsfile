@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "phucitdev/pickleball-backend:latest"
+        IMAGE_NAME = "phucitdev/be-pickleball:latest"
     }
 
     stages {
@@ -45,7 +45,7 @@ pipeline {
             steps {
                 sh '''
                 ssh root@178.128.113.47 "
-                docker pull phucitdev/pickleball-backend:latest &&
+                docker pull phucitdev/be-pickleball:latest &&
                 docker stop backend || true &&
                 docker rm backend || true &&
                 docker run -d \
@@ -53,7 +53,7 @@ pipeline {
                 --network pickleball-network \
                 -p 8080:8080 \
                 --restart always \
-                phucitdev/pickleball-backend:latest                "
+                phucitdev/be-pickleball:latest                "
                 '''
             }
         }
