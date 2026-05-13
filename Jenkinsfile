@@ -44,7 +44,7 @@ pipeline {
         stage('Deploy to VPS') {
             steps {
                 sh '''
-                ssh root@178.128.113.47 "
+                ssh root@167.71.216.28 "
                 docker pull phucitdev/be-pickleball:latest &&
                 docker stop backend || true &&
                 docker rm backend || true &&
