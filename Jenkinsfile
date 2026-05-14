@@ -46,10 +46,10 @@ pipeline {
                 sh '''
                 ssh root@167.71.216.28 "
                 docker pull phucitdev/be-pickleball:latest &&
-                docker stop backend || true &&
-                docker rm backend || true &&
+                docker stop pickleball-be || true &&
+                docker rm pickleball-be || true &&
                 docker run -d \
-                --name backend \
+                --name pickleball-be \
                 --network pickleball-network \
                 -p 8080:8080 \
                 --restart always \
